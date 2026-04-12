@@ -1,0 +1,19 @@
+# API framework
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# Data
+pyarrow==16.0.0
+pandas==2.2.2
+
+# Cache + LLM
+redis==5.0.4
+anthropic==0.28.0
+httpx>=0.23.0,<0.28.0   # anthropic 0.28 passes proxies= removed in httpx 0.28
+
+# Ingestor deps — required for POST /classify/upload (in-process YASA staging)
+yasa==0.6.5
+mne==1.7.1
+numpy==1.26.4
+scipy==1.13.0

@@ -1,0 +1,47 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  ingestor:
+    build: ./services/ingestor
+    volumes:
+      - ./data/raw:/data/raw:ro
+      - ./data/features:/data/features
+    environment:
+      - FEATURES_DIR=/data/features
+      - RAW_DIR=/data/raw
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    restart: on-failure   # batch job: retry on error, stop cleanly on success
+
+  api:
+    build: ./services/api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/raw:/data/raw          # r/w — upload endpoint saves files here
+      - ./data/features:/data/features
+      - ./services/ingestor:/ingestor:ro  # shared code for in-process upload ingest
+    environment:
+      - FEATURES_DIR=/data/features
+      - RAW_DIR=/data/raw
+      - REDIS_URL=redis://redis:6379
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on:
+      - redis
+      - ingestor
+    restart: unless-stopped
+
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - api
+    restart: unless-stopped

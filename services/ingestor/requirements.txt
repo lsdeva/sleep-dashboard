@@ -1,0 +1,7 @@
+yasa==0.6.5
+mne==1.7.1
+pyarrow==16.0.0
+pandas==2.2.2
+numpy==1.26.4
+scipy==1.13.0
+redis==5.0.4

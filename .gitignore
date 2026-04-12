@@ -1,0 +1,36 @@
+# Environment — never commit real credentials
+.env
+
+# Data — ignore all raw and derived files, keep directory markers
+data/raw/*
+data/features/*
+!data/raw/.gitkeep
+!data/features/.gitkeep
+
+# Safety net — ignore EDF / sidecar / annotation files anywhere in the tree
+*.edf
+*.edf.st
+
+# Text annotations under data/ only (not project-wide)
+data/**/*.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Logs
+*.log
+
+# OS artefacts
+.DS_Store
+Thumbs.db
