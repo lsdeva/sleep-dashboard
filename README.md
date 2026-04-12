@@ -100,4 +100,4 @@ MIT License — see [LICENSE](LICENSE) for full text.
 ## See Also
 
 - [DECISIONS.md](DECISIONS.md) — recorded architecture decisions
-- [AUDIT.md](AUDIT.md) — scaffold validation report
+
