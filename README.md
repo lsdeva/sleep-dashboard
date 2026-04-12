@@ -4,6 +4,8 @@ Portfolio proof-of-concept for automated sleep study analysis using EEG/PSG data
 Ingests PhysioNet EDF recordings, runs YASA sleep staging, detects anomalies against
 AASM adult norms, and generates AI clinical narrative summaries via the Anthropic Claude API.
 
+![Sleep Disorder Intelligence Dashboard — screen](docs/sleep%20well.png)
+
 ## Architecture
 
 ![Sleep Disorder Intelligence Dashboard — architecture](docs/sleep_dashboard_readme_architecture.svg)
