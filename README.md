@@ -31,7 +31,7 @@ Four-service Docker Compose stack, all communication internal to the Docker netw
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url>
+git clone [<repo-url>](https://github.com/lsdeva/sleep-dashboard.git)
 cd sleep-dashboard
 
 # 2. Create your environment file from the example
