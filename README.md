@@ -6,6 +6,8 @@ AASM adult norms, and generates AI clinical narrative summaries via the Anthropi
 
 ## Architecture
 
+![Sleep Disorder Intelligence Dashboard — architecture](docs/sleep_dashboard_readme_architecture.svg)
+
 Four-service Docker Compose stack, all communication internal to the Docker network:
 
 ```
