@@ -22,7 +22,7 @@ import anthropic
 import pandas as pd
 import pyarrow.parquet as pq
 import redis as redis_lib
-from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 # ---------------------------------------------------------------------------
@@ -221,12 +221,10 @@ async def _get_narrative(
     pathology: str,
     summary: dict,
     anomalies: list[dict],
-    api_key: str | None = None,
 ) -> tuple[str, bool]:
     """
     Fetch a Claude clinical narrative for the recording.
     Returns (text, was_cache_hit).
-    api_key: per-request key from X-Anthropic-Api-Key header; falls back to _anthropic.
     """
     cache_key = _narrative_key(recording_id)
 
@@ -237,14 +235,10 @@ async def _get_narrative(
             log.debug("Narrative cache hit for %s", recording_id)
             return cached, True
 
-    # ── resolve client (per-request key takes priority over env key) ─────────
-    if api_key:
-        client = anthropic.Anthropic(api_key=api_key)
-    elif _anthropic is not None:
-        client = _anthropic
-    else:
+    # ── no API key configured ─────────────────────────────────────────────────
+    if _anthropic is None:
         return (
-            "Narrative unavailable: set an Anthropic API key to enable clinical summaries.",
+            "Narrative unavailable: set ANTHROPIC_API_KEY in .env to enable clinical summaries.",
             False,
         )
 
@@ -280,7 +274,7 @@ async def _get_narrative(
     # ── call Claude (blocking SDK call → thread) ──────────────────────────────
     try:
         response = await asyncio.to_thread(
-            client.messages.create,
+            _anthropic.messages.create,
             model=CLAUDE_MODEL,
             max_tokens=400,
             messages=[{"role": "user", "content": prompt}],
@@ -305,7 +299,7 @@ async def _get_narrative(
 # Shared classify logic  (used by both GET and POST classify endpoints)
 # ---------------------------------------------------------------------------
 
-async def _classify(recording_id: str, api_key: str | None = None) -> dict:
+async def _classify(recording_id: str) -> dict:
     summary = _read_summary(recording_id)
     if summary is None:
         raise HTTPException(
@@ -318,7 +312,7 @@ async def _classify(recording_id: str, api_key: str | None = None) -> dict:
 
     _, pathology   = _infer_pathology(recording_id)
     anomalies      = _detect_anomalies(summary)
-    narrative, hit = await _get_narrative(recording_id, pathology, summary, anomalies, api_key=api_key)
+    narrative, hit = await _get_narrative(recording_id, pathology, summary, anomalies)
 
     return {
         "recording_id": recording_id,
@@ -460,17 +454,13 @@ async def list_patients():
     "/classify/{filename:path}",
     summary="Stage distribution, anomalies, and clinical narrative for a recording",
 )
-async def classify(
-    filename: str,
-    x_anthropic_api_key: str | None = Header(default=None),
-):
+async def classify(filename: str):
     """
     `filename` accepts the bare stem (e.g. `n1`) or with extension (`n1.edf`).
     The response includes the Claude narrative, served from Redis cache on repeat calls.
-    Pass X-Anthropic-Api-Key to use a browser-supplied key instead of the server env key.
     """
     recording_id = Path(filename).stem
-    return await _classify(recording_id, api_key=x_anthropic_api_key)
+    return await _classify(recording_id)
 
 
 @app.post(
@@ -478,10 +468,7 @@ async def classify(
     summary="Upload a new EDF file, ingest it, and return classify results",
     status_code=200,
 )
-async def upload_and_classify(
-    file: UploadFile = File(...),
-    x_anthropic_api_key: str | None = Header(default=None),
-):
+async def upload_and_classify(file: UploadFile = File(...)):
     """
     Accepts an EDF file, saves it to /data/raw/, runs YASA staging
     (blocking, up to 10 min), then returns the full classify payload.
@@ -512,4 +499,4 @@ async def upload_and_classify(
         log.exception("Unexpected ingest error for %s", dest.name)
         raise HTTPException(500, f"Ingestion failed: {exc}")
 
-    return await _classify(dest.stem, api_key=x_anthropic_api_key)
+    return await _classify(dest.stem)

@@ -84,13 +84,13 @@
 
 ---
 
-## ADR-010 — API Key Handling: .env as primary source, browser header as override
+## ADR-010 — API Key Handling: .env only, never in frontend
 
-**Decision:** The Anthropic API key is configured server-side via the `ANTHROPIC_API_KEY` environment variable in `.env`. As a UX convenience, the frontend may also accept a key entered in the browser, stored in `localStorage`, and forwarded as the `X-Anthropic-Api-Key` request header; the backend uses this per-request key in preference to the env key when present.
+**Decision:** The Anthropic API key is configured exclusively via the `ANTHROPIC_API_KEY` environment variable in `.env` (gitignored). The key is read by the API container at startup and is never sent to or stored in the browser.
 
-**Rationale:** Keeping the key in `.env` (gitignored) is the secure default for server deployments. The browser-side override lets portfolio reviewers supply their own key without editing server config files. The key is never committed to version control, never logged, and never sent to any service other than the Anthropic API.
+**Rationale:** Keeping credentials server-side eliminates the risk of key exposure through browser storage, network traffic inspection, or JavaScript bundle analysis. `.env` is gitignored and `.env.example` contains only a placeholder value.
 
-**Consequences:** `localStorage` is not a secure credential store for production use. This pattern is acceptable for a local-only PoC but must not be adopted in a multi-user or internet-facing deployment.
+**Consequences:** Deployers must configure `.env` before starting the stack. There is no in-browser key-entry flow.
 
 ---
 

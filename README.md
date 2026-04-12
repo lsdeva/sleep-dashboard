@@ -91,8 +91,8 @@ EDF sleep study files contain sensitive biometric data. This project is designed
   band power extraction) runs entirely on your local machine inside Docker containers
 - Only de-identified aggregate statistics (stage percentages, latencies, transition counts)
   are sent to the Anthropic Claude API to generate the clinical narrative
-- The Anthropic API key is stored in `.env` (gitignored) and optionally in browser
-  `localStorage` for the in-browser key-entry flow; it is never logged or persisted elsewhere
+- The Anthropic API key is stored only in `.env` (gitignored) and read by the API
+  container at startup; it is never sent to the browser, never logged, and never persisted elsewhere
 
 ## License
 

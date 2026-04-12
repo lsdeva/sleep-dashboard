@@ -44,7 +44,7 @@ function AnomalyCard({ anomaly }) {
   )
 }
 
-export default function InsightPanel({ data, onConfigureKey }) {
+export default function InsightPanel({ data }) {
   const { anomalies = [], narrative, narrative_cached, pathology } = data
   const noKey = narrative?.startsWith('Narrative unavailable')
 
@@ -86,18 +86,9 @@ export default function InsightPanel({ data, onConfigureKey }) {
                           background: '#f5f5f5', border: '1px solid #e0e0e0',
                           fontSize: 13, color: '#aaa', fontStyle: 'italic' }}>
               {narrative}
-              <div style={{ marginTop: 10, fontStyle: 'normal', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  onClick={onConfigureKey}
-                  style={{
-                    padding: '5px 14px', borderRadius: 6, border: 'none',
-                    background: '#1976d2', color: 'white', fontSize: 12,
-                    fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  Set API key
-                </button>
-                <span style={{ color: '#aaa', fontSize: 12 }}>to enable AI-generated clinical summaries</span>
+              <div style={{ marginTop: 8, fontStyle: 'normal', color: '#888', fontSize: 12 }}>
+                Set <code>ANTHROPIC_API_KEY</code> in <code>.env</code> to enable
+                AI-generated clinical summaries.
               </div>
             </div>
           ) : (
