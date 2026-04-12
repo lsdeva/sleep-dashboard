@@ -10,15 +10,6 @@ AASM adult norms, and generates AI clinical narrative summaries via the Anthropi
 
 Four-service Docker Compose stack, all communication internal to the Docker network:
 
-```
-Browser
-  └─► frontend  (React + Vite, :5173)
-        └─► api  (FastAPI, :8000)
-              ├─► redis      (narrative cache, 24 hr TTL)
-              └─► ingestor   (EDF → Parquet pipeline, runs once at startup)
-                    └── data/raw/       (bind-mounted EDF files, read-only)
-                    └── data/features/  (Parquet output, shared with api)
-```
 
 | Service    | Description                                              |
 |------------|----------------------------------------------------------|
@@ -111,4 +102,4 @@ MIT License — see [LICENSE](LICENSE) for full text.
 ## See Also
 
 - [DECISIONS.md](DECISIONS.md) — recorded architecture decisions
-- [AUDIT.md](AUDIT.md) — scaffold validation report
+
