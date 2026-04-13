@@ -65,22 +65,21 @@ make logs    # docker compose logs -f
 
 ## Adding EDF Files
 
-1. Copy `.edf` files into `./data/raw/`.
-   Files must follow CAP Sleep Database naming conventions for pathology inference:
+**Option A — Upload via the dashboard** (recommended for individual files):
+Use the **Upload EDF** button in the sidebar. The file is staged immediately and results
+appear without restarting anything.
 
-   | Prefix | Pathology                       |
-   |--------|---------------------------------|
-   | `ins`  | Insomnia                        |
-   | `nfle` | Nocturnal Frontal Lobe Epilepsy |
-   | `rbd`  | REM Behavior Disorder           |
-   | `sdb`  | Sleep-Disordered Breathing      |
-   | `plm`  | Periodic Leg Movements          |
-   | `brux` | Bruxism                         |
-   | `nar`  | Narcolepsy                      |
-   | `n`    | Normal                          |
+**Option B — Bulk load at startup**:
+Copy any `.edf` files into `./data/raw/`, then restart the ingestor:
+```bash
+docker compose restart ingestor
+```
+The ingestor processes every EDF file it finds in that folder.
 
-2. Restart the ingestor: `docker compose restart ingestor`
-   — or use the **Upload EDF** button in the dashboard to process a single file on demand.
+Any EDF file is accepted regardless of filename. If the filename matches a
+[PhysioNet CAP Sleep Database](https://physionet.org/content/capslpdb/) prefix
+(e.g. `ins`, `nfle`, `rbd`) the pathology label is inferred automatically;
+otherwise it is shown as **Unknown**.
 
 ## Data Privacy
 

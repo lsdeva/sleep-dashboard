@@ -13,6 +13,11 @@ For each .edf file in RAW_DIR:
   8. Report status to Redis hash  ingest:status
 """
 
+import warnings
+# YASA's pretrained model was serialised with scikit-learn 0.24.2.
+# InconsistentVersionWarning is benign for LabelEncoder across versions.
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+
 import json
 import logging
 import os
