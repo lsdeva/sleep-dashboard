@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import anthropic
+import hvac
 import pandas as pd
 import pyarrow.parquet as pq
 import redis as redis_lib
@@ -32,7 +33,9 @@ from fastapi.middleware.cors import CORSMiddleware
 FEATURES_DIR  = Path(os.getenv("FEATURES_DIR",  "/data/features"))
 RAW_DIR       = Path(os.getenv("RAW_DIR",        "/data/raw"))
 REDIS_URL     = os.getenv("REDIS_URL",            "redis://redis:6379")
-ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY",    "")
+VAULT_ADDR    = os.getenv("VAULT_ADDR",           "")
+VAULT_TOKEN   = os.getenv("VAULT_TOKEN",          "")
+VAULT_SECRET_PATH = os.getenv("VAULT_SECRET_PATH", "secret/data/sleepwell")
 CLAUDE_MODEL  = "claude-sonnet-4-20250514"
 NARRATIVE_TTL = 86_400  # 24 hours, in seconds
 
@@ -42,6 +45,28 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
 log = logging.getLogger("api")
+
+
+def _fetch_vault_secret(key: str) -> str:
+    """Fetch a single secret value from HashiCorp Vault KV v2."""
+    if not VAULT_ADDR or not VAULT_TOKEN:
+        return ""
+    try:
+        client = hvac.Client(url=VAULT_ADDR, token=VAULT_TOKEN)
+        resp = client.secrets.kv.v2.read_secret_version(
+            path="sleepwell", mount_point="secret", raise_on_deleted_version=True,
+        )
+        value = resp["data"]["data"].get(key, "")
+        if value:
+            log.info("Fetched %s from Vault (%s)", key, VAULT_ADDR)
+        return value
+    except Exception as exc:
+        log.warning("Vault lookup failed for %s: %s", key, exc)
+        return ""
+
+
+# Vault first, then fall back to env var for backwards compatibility
+ANTHROPIC_KEY = _fetch_vault_secret("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_API_KEY", "")
 
 # ---------------------------------------------------------------------------
 # App + lifespan
@@ -68,7 +93,7 @@ async def lifespan(_app: "FastAPI"):
         _anthropic = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
         log.info("Anthropic client ready  model=%s", CLAUDE_MODEL)
     else:
-        log.warning("ANTHROPIC_API_KEY not set — narratives will be disabled")
+        log.warning("ANTHROPIC_API_KEY not found in Vault or env — narratives will be disabled")
 
     yield  # ── app running ───────────────────────────────────────────────────
 
@@ -238,7 +263,7 @@ async def _get_narrative(
     # ── no API key configured ─────────────────────────────────────────────────
     if _anthropic is None:
         return (
-            "Narrative unavailable: set ANTHROPIC_API_KEY in .env to enable clinical summaries.",
+            "Narrative unavailable: add ANTHROPIC_API_KEY to Vault (localhost:8200) to enable clinical summaries.",
             False,
         )
 

@@ -5,6 +5,23 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
+  vault:
+    image: hashicorp/vault:1.15
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root-token
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   ingestor:
     build: ./services/ingestor
     volumes:
@@ -30,10 +47,16 @@ services:
       - FEATURES_DIR=/data/features
       - RAW_DIR=/data/raw
       - REDIS_URL=redis://redis:6379
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-root-token
+      - VAULT_SECRET_PATH=secret/data/sleepwell
     depends_on:
-      - redis
-      - ingestor
+      redis:
+        condition: service_started
+      ingestor:
+        condition: service_started
+      vault:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:

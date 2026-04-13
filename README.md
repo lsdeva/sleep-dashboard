@@ -27,7 +27,7 @@
 
 ![Sleep Disorder Intelligence Dashboard — architecture](docs/sleep_dashboard_readme_architecture.svg)
 
-Four-service Docker Compose stack, all communication internal to the Docker network:
+Six-service Docker Compose stack, all communication internal to the Docker network:
 
 | Service    | Description                                              |
 |------------|----------------------------------------------------------|
@@ -35,6 +35,7 @@ Four-service Docker Compose stack, all communication internal to the Docker netw
 | api        | FastAPI — serves features, triggers Claude narratives    |
 | frontend   | React + Vite + Plotly dashboard                          |
 | redis      | Narrative cache keyed by filename                        |
+| vault      | HashiCorp Vault — stores the Anthropic API key securely  |
 
 ## Prerequisites
 
@@ -52,7 +53,6 @@ cd sleep-dashboard
 
 # 2. Create your environment file from the example
 cp .env.example .env
-# Edit .env and replace sk-ant-your-key-here with your real Anthropic API key
 
 # 3. Place EDF files in the data directory (optional — you can also upload via the UI)
 #    Example: data/raw/ins1.edf
@@ -66,6 +66,29 @@ docker compose up --build
 
 - Dashboard: http://localhost:5173
 - API docs: http://localhost:8000/docs
+- Vault UI: http://localhost:8200
+
+### Adding your Anthropic API key via Vault
+
+The API key is stored in HashiCorp Vault instead of `.env`. After `docker compose up`:
+
+1. Open **http://localhost:8200** in your browser
+2. Sign in with **Method: Token** and enter `dev-root-token`
+3. Click **secret/** in the secrets engine list
+4. Click **Create secret** (top-right)
+5. Set **Path** to `sleepwell`
+6. Add a key-value pair:
+   - **Key:** `ANTHROPIC_API_KEY`
+   - **Value:** your Anthropic API key (e.g. `sk-ant-api03-...`)
+7. Click **Save**
+8. Restart the API container to pick up the new secret:
+   ```bash
+   docker compose restart api
+   ```
+
+The API fetches the key from Vault on startup. You can verify it worked by
+checking `http://localhost:8000/health` — the `anthropic_ready` field should
+be `true`.
 
 The ingestor runs automatically on startup and stages all EDF files found in `data/raw/`.
 Subsequent `docker compose up` calls skip already-processed files (Parquet cache present).
@@ -113,8 +136,8 @@ EDF sleep study files contain sensitive biometric data. This project is designed
   band power extraction) runs entirely on your local machine inside Docker containers
 - Only de-identified aggregate statistics (stage percentages, latencies, transition counts)
   are sent to the Anthropic Claude API to generate the clinical narrative
-- The Anthropic API key is stored only in `.env` (gitignored) and read by the API
-  container at startup; it is never sent to the browser, never logged, and never persisted elsewhere
+- The Anthropic API key is stored in HashiCorp Vault (not in `.env`); it is fetched by the API
+  container at startup and is never sent to the browser, never logged, and never persisted elsewhere
 
 ## Contributing
 

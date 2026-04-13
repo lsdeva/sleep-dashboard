@@ -87,8 +87,12 @@ export default function InsightPanel({ data }) {
                           fontSize: 13, color: '#aaa', fontStyle: 'italic' }}>
               {narrative}
               <div style={{ marginTop: 8, fontStyle: 'normal', color: '#888', fontSize: 12 }}>
-                Set <code>ANTHROPIC_API_KEY</code> in <code>.env</code> to enable
-                AI-generated clinical summaries.
+                Add <code>ANTHROPIC_API_KEY</code> in{' '}
+                <a href="http://localhost:8200" target="_blank" rel="noopener noreferrer"
+                   style={{ color: '#1565c0' }}>
+                  Vault UI (localhost:8200)
+                </a>{' '}
+                to enable AI-generated clinical summaries.
               </div>
             </div>
           ) : (
