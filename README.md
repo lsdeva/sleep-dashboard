@@ -1,17 +1,34 @@
 # Sleep Disorder AI Dashboard
 
-Portfolio proof-of-concept for automated sleep study analysis using EEG/PSG data.
-Ingests PhysioNet EDF recordings, runs YASA sleep staging, detects anomalies against
-AASM adult norms, and generates AI clinical narrative summaries via the Anthropic Claude API.
+![License](https://img.shields.io/badge/license-MIT-green)
+![Docker](https://img.shields.io/badge/docker-required-blue)
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![Claude](https://img.shields.io/badge/Claude-API-orange)
+![YASA](https://img.shields.io/badge/YASA-sleep%20staging-purple)
+
+*AI-augmented clinical sleep study analysis — from raw EDF to clinician-ready narrative in minutes.*
 
 ![Sleep Disorder Intelligence Dashboard — screen](docs/sleep%20well.png)
+
+## Demo
+
+> Drop an EDF file → YASA stages it → Claude explains it in clinical language.
+
+Live demo GIF coming soon — run locally with `docker compose up --build`
+
+## How It Works
+
+1. **Ingest** — Drop any `.edf` polysomnography file into the dashboard (or `data/raw/`)
+2. **Stage** — [YASA](https://raphaelvallat.com/yasa/) classifies every 30 s epoch into W / N1 / N2 / N3 / REM using a pretrained LightGBM model
+3. **Extract** — Per-epoch band powers (delta, theta, alpha, sigma, beta) and patient-level sleep architecture metrics are computed and cached as Parquet
+4. **Score** — Each metric is z-scored against AASM adult reference norms; the top anomalies are surfaced
+5. **Narrate** — The structured results are sent to the Anthropic Claude API, which returns a concise clinical narrative summary
 
 ## Architecture
 
 ![Sleep Disorder Intelligence Dashboard — architecture](docs/sleep_dashboard_readme_architecture.svg)
 
 Four-service Docker Compose stack, all communication internal to the Docker network:
-
 
 | Service    | Description                                              |
 |------------|----------------------------------------------------------|
@@ -38,8 +55,8 @@ cd sleep-dashboard
 cp .env.example .env
 # Edit .env and replace sk-ant-your-key-here with your real Anthropic API key
 
-# 3. Place EDF files in the data directory
-#    Example: data/raw/ins1.edf  (CAP Sleep Database filenames — see "Adding EDF files" below)
+# 3. Place EDF files in the data directory (optional — you can also upload via the UI)
+#    Example: data/raw/ins1.edf
 ```
 
 ## How to Run
@@ -81,6 +98,13 @@ Any EDF file is accepted regardless of filename. If the filename matches a
 (e.g. `ins`, `nfle`, `rbd`) the pathology label is inferred automatically;
 otherwise it is shown as **Unknown**.
 
+## Token Usage
+
+Each clinical narrative consumes approximately **400 output tokens** via the Anthropic API
+(`claude-sonnet-4-20250514`). Narratives are cached in Redis with a 24-hour TTL, so
+repeat views of the same recording incur no additional API cost. With caching enabled,
+analysing 10 unique recordings costs roughly 4 000 tokens (~$0.01 at current Sonnet pricing).
+
 ## Data Privacy
 
 EDF sleep study files contain sensitive biometric data. This project is designed so that:
@@ -93,6 +117,15 @@ EDF sleep study files contain sensitive biometric data. This project is designed
 - The Anthropic API key is stored only in `.env` (gitignored) and read by the API
   container at startup; it is never sent to the browser, never logged, and never persisted elsewhere
 
+## Contributing
+
+Contributions are welcome. Please open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-change`)
+3. Commit your changes
+4. Open a pull request
+
 ## License
 
 MIT License — see [LICENSE](LICENSE) for full text.
@@ -103,4 +136,3 @@ MIT License — see [LICENSE](LICENSE) for full text.
 ## See Also
 
 - [DECISIONS.md](DECISIONS.md) — recorded architecture decisions
-
