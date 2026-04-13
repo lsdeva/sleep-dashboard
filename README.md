@@ -8,13 +8,12 @@
 
 *AI-augmented clinical sleep study analysis — from raw EDF to clinician-ready narrative in minutes.*
 
-![Sleep Disorder Intelligence Dashboard — screen](docs/sleep%20well.png)
+
 
 ## Demo
 
-> Drop an EDF file → YASA stages it → Claude explains it in clinical language.
+![Sleep Disorder Intelligence Dashboard — screen](docs/sleep%20well.png)
 
-Live demo GIF coming soon — run locally with `docker compose up --build`
 
 ## How It Works
 
